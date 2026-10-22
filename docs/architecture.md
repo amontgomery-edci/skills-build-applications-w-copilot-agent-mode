@@ -30,13 +30,22 @@ OctoFit Tracker is a three-tier application for a school fitness program. The st
 
 Record your plan here before editing code.
 
-- Presentation tier decision:
-- Logic tier decision:
-- Data tier decision:
-- Activity tracking approach:
-- Team management approach:
-- Leaderboard approach:
-- Workout suggestions approach:
+Smallest safe implementation order
+The safest order is:
+
+1. Data contracts first
+    - Complete the Mongoose validation for the user, team, activity, and workout models.
+    - This is the root cause of the data-tier failures and the schema rules are the foundation for every API response.
+
+2. Logic/API layer second
+    - Implement the activity/team/leaderboard/workout endpoints in the backend so they reject invalid input with 4xx responses, aggregate points correctly, and generate workout suggestions from seeded user activity patterns.
+    - This is the next dependency, because the frontend cannot satisfy its contract without valid backend behavior.
+
+3. Presentation layer last
+    - Add the React screens and API client logic to render data, display empty/loading/error states, and request the correct endpoint for a specific user.
+    - This is safest last because it depends on stable backend contracts and data shapes.
+    
+This is the smallest safe sequence because it follows the architecture’s tier dependency: data defines the contract, logic enforces it, and the UI simply consumes it.
 
 ## Test plan
 
