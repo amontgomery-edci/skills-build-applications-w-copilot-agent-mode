@@ -28,31 +28,45 @@ OctoFit Tracker is a three-tier application for a school fitness program. The st
 
 ## Implementation decisions
 
-Record your plan here before editing code.
+- Presentation tier decision: Keep React components focused on fetching, rendering, and accessible state. The app should use a shared API client, show loading/empty/error states, and make route-driven requests without embedding business logic.
+- Logic tier decision: Implement server-side validation and response shaping in Express. Every route should reject malformed input with 4xx responses, verify referenced user/team records, and keep JSON payloads aligned with the contract.
+- Data tier decision: Use Mongoose schemas as the source of truth for required fields, defaults, and relationship integrity. The seed script should remain idempotent so repeated runs preserve prior records while adding the expected baseline dataset.
+- Activity tracking approach: Accept `userId`, `teamId`, `type`, and `minutes`; validate both IDs; persist the submitted references plus computed `points` and `occurredAt`; and reject invalid or missing foreign keys without letting cast errors become 500 responses.
+- Team management approach: Require a `name` and `mascot` for create operations, default `members` to an empty array, and return team records with the submitted member references intact.
+- Leaderboard approach: Aggregate points by team, sort descending by total, and assign 1-based ranks so the leaderboard matches the API contract exactly.
+- Workout suggestions approach: Match the email to a seeded user, inspect the user goal or recent activity pattern, and recommend the best workout with a descriptive `reason` while returning a deliberate 4xx for unknown emails.
 
 Smallest safe implementation order
 The safest order is:
 
 1. Data contracts first
-    - Complete the Mongoose validation for the user, team, activity, and workout models.
-    - This is the root cause of the data-tier failures and the schema rules are the foundation for every API response.
+   - Complete the Mongoose validation for the user, team, activity, and workout models.
+   - This is the root cause of the failing data-tier tests and establishes the contract the API must respect.
 
 2. Logic/API layer second
-    - Implement the activity/team/leaderboard/workout endpoints in the backend so they reject invalid input with 4xx responses, aggregate points correctly, and generate workout suggestions from seeded user activity patterns.
-    - This is the next dependency, because the frontend cannot satisfy its contract without valid backend behavior.
+   - Implement the activity, team, leaderboard, and workout endpoints in the backend so they reject invalid requests with 4xx responses, aggregate points correctly, and generate workout suggestions from seeded user activity patterns.
+   - This is the next dependency, because the frontend cannot satisfy its contract without valid backend behavior.
 
 3. Presentation layer last
-    - Add the React screens and API client logic to render data, display empty/loading/error states, and request the correct endpoint for a specific user.
-    - This is safest last because it depends on stable backend contracts and data shapes.
-    
+   - Add the React screens and API client logic to render data, display empty/loading/error states, and request the correct endpoint for a specific user.
+   - This is safest last because it depends on stable backend contracts and data shapes.
+
 This is the smallest safe sequence because it follows the architecture’s tier dependency: data defines the contract, logic enforces it, and the UI simply consumes it.
 
 ## Test plan
 
-Record the commands you run and what each failure means.
-
 - Data-tier command: `npm run test:data --prefix octofit-tracker/backend`
+  - Current state: fails in 4 validation tests because `User`, `Team`, `Activity`, and `Workout` schemas are not enforcing the required fields yet.
+  - The seed test passes, which means the data setup is largely correct even though the schema contract has not been enforced.
 - API command: `npm run test:api --prefix octofit-tracker/backend`
+  - Current state: fails in 4 endpoint tests because invalid input still returns 501 instead of a 4xx, leaderboard data is empty, and workout suggestions are missing the required `reason` text and matching focus.
+  - This confirms the server-side logic layer is the main missing implementation.
 - Frontend command: `npm test --prefix octofit-tracker/frontend`
+  - Current state: fails because the UI still renders “Implementation pending” and does not expose the required loading, empty, and accessible alert states.
+  - This confirms the presentation layer is still stubbed and not connected to the API contract.
 - Backend build command: `npm run build --prefix octofit-tracker/backend`
+  - Run after the data and API contracts are fixed to verify TypeScript compilation in the logic/data tiers.
 - Frontend build command: `npm run build --prefix octofit-tracker/frontend`
+  - Run after the UI contract is implemented to verify the Vite/React app compiles cleanly with the final API contract.
+
+The test plan mirrors the implementation order: start with validation, then logic, then presentation, and use each failing suite as the boundary check for the next tier.
