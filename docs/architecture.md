@@ -67,6 +67,6 @@ This is the smallest safe sequence because it follows the architecture’s tier 
 - Backend build command: `npm run build --prefix octofit-tracker/backend`
   - Run after the data and API contracts are fixed to verify TypeScript compilation in the logic/data tiers.
 - Frontend build command: `npm run build --prefix octofit-tracker/frontend`
-  - Run after the UI contract is implemented to verify the Vite/React app compiles cleanly with the final API contract
+  - Run after the UI contract is implemented to verify the Vite/React app compiles cleanly with the final API contract.
 
 The test plan mirrors the implementation order: start with validation, then logic, then presentation, and use each failing suite as the boundary check for the next tier
