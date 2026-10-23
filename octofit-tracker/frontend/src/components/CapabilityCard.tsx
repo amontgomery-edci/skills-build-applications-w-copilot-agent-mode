@@ -1,17 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getJson } from '../api/client.js';
 
 type CapabilityKey = 'activities' | 'teams' | 'leaderboard' | 'suggestions';
 
 type Props = {
   title: string;
   description: string;
-  endpoint: string;
+  load: () => Promise<Record<string, unknown>>;
   dataKey: CapabilityKey;
   emptyText: string;
 };
 
-export function CapabilityCard({ title, description, endpoint, dataKey, emptyText }: Props) {
+export function CapabilityCard({ title, description, load: loadData, dataKey, emptyText }: Props) {
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -21,7 +20,7 @@ export function CapabilityCard({ title, description, endpoint, dataKey, emptyTex
 
     async function load() {
       try {
-        const response = await getJson<Record<string, unknown>>(endpoint);
+        const response = await loadData();
         if (!isMounted) return;
         setData(response);
         setError(null);
@@ -37,7 +36,7 @@ export function CapabilityCard({ title, description, endpoint, dataKey, emptyTex
     return () => {
       isMounted = false;
     };
-  }, [endpoint]);
+  }, [loadData]);
 
   const items = useMemo(() => {
     if (!data) return [] as Array<Record<string, unknown>>;
