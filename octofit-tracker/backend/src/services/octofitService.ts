@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { Activity, Team, User, Workout } from '../models/index.js';
 
-function throwBadRequest(message: string) {
+function throwBadRequest(message: string): never {
   const error = new Error(message) as Error & { status?: number };
   error.status = 400;
   throw error;
